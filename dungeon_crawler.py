@@ -6,7 +6,7 @@ import os
 # fun idea: roll some dice for player movement, attack, etc. and force them to choose
 class Dungeon:
     def __init__(self):
-        self.board_size = 5
+        self.board_size = 6
         self.exit_pos = [self.board_size - 1, self.board_size - 1]
         occupied_spaces = [[0, 0], self.exit_pos]
         
@@ -48,7 +48,7 @@ class Dungeon:
             occupied_spaces.append([row, col])
             num_treasures += 1
             
-            if num_treasures == 2: # currently hard coded for size 5
+            if num_treasures == 3: # currently hard coded for size 5
                 break
             
         print(occupied_spaces)
@@ -80,6 +80,7 @@ class Dungeon:
             if [p_row, p_col] == self.treasures[i]:
                 player.score += 1
                 self.treasures.pop(i)
+                break
          
 class Player:
     def __init__(self):
