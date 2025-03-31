@@ -1,0 +1,16 @@
+{
+    "expenses": [
+        {
+            "amount": 0.0,
+            "category": "Testing",
+            "date": "2025-03-22",
+            "description": "Test"
+        },
+        {
+            "amount": 4.99,
+            "category": "Testing",
+            "date": "2025-03-24",
+            "description": "Test"
+        }
+    ]
+}
