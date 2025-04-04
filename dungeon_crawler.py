@@ -15,13 +15,14 @@ import os
 
 class Dungeon:
     def __init__(self):
-        self.board_size = 7
-        self.exit_pos = [self.board_size - 1, self.board_size - 1]
+        self.board_rows = 7 # hard coded for now, later random
+        self.board_columns = 7
+        self.exit_pos = [self.board_rows - 1, self.board_columns - 1]
         occupied_spaces = [[0, 0], self.exit_pos]
         
         # wall generation
         self.walls = []
-        wall_origins = [[random.randint(1, self.board_size - 2), random.randint(1, self.board_size - 2)] for _ in range(self.board_size // 2)]
+        wall_origins = [[random.randint(1, self.board_rows - 2), random.randint(1, self.board_columns - 2)] for _ in range(int((self.board_rows * self.board_columns) ** 0.33))]
         for origin in wall_origins:
             directions = [[1, 0], [-1, 0], [0, 1], [0, -1]]
             extra_walls = random.sample(directions, random.randint(1, 2)) # extra_walls is hardcoded for size 5
@@ -35,7 +36,7 @@ class Dungeon:
             
         # prevent the exit or player from being replaced by a wall
         for i in range(len(self.walls) - 1):
-            if self.walls[i] == [0, 0] or self.walls[i] == [self.board_size - 1, self.board_size - 1]:
+            if self.walls[i] == [0, 0] or self.walls[i] == [self.board_rows - 1, self.board_columns - 1]:
                 self.walls.pop(i)
                 
         # complete random wall generation
@@ -48,8 +49,8 @@ class Dungeon:
         self.treasures = []
         num_treasures = 0
         while num_treasures < 3: # hard coded, adjust later
-            row = random.randint(0, self.board_size - 1)
-            col = random.randint(0, self.board_size - 1)
+            row = random.randint(0, self.board_rows - 1)
+            col = random.randint(0, self.board_columns - 1)
             
             if [row, col] in occupied_spaces:
                 continue
@@ -63,8 +64,8 @@ class Dungeon:
         self.monsters = []
         num_monsters = 0
         while num_monsters < 3: # hard coded, adjust later
-            row = random.randint(0, self.board_size - 1)
-            col = random.randint(0, self.board_size - 1)
+            row = random.randint(0, self.board_rows - 1)
+            col = random.randint(0, self.board_columns - 1)
             
             if [row, col] in occupied_spaces:
                 continue
@@ -80,13 +81,13 @@ class Dungeon:
         
     def check_win(self, player):
         if [player.row, player.col] == self.exit_pos:
-            print("you win!")
+            print("You win!")
             return True
         return False
         
     def print_board(self, player, turn):
         p_row, p_col = player.row, player.col
-        board = [[" - " for _ in range(self.board_size)] for _ in range(self.board_size)]
+        board = [[" - " for _ in range(self.board_rows)] for _ in range(self.board_columns)]
         board[p_row][p_col] = "P"
         board[self.exit_pos[0]][self.exit_pos[1]] = "E"
         for wall in self.walls:
@@ -96,24 +97,26 @@ class Dungeon:
         for monster in self.monsters:
             board[monster[0]][monster[1]] = "M"
         
-        print(f"Score: {player.score} | Turn: {turn}")
+        print(f" Turn: {turn} | Score: {player.score}")
+        if player.inventory:
+            print("---Inventory---")
+            print(tabulate([[item.name for item in player.inventory]]))
         print(tabulate(board, tablefmt="grid"))
         
-    def check_treasure(self, player):
+    def get_treasure(self, player):
         p_row, p_col = player.row, player.col
         for i in range(len(self.treasures)):
             if [p_row, p_col] == self.treasures[i][0:2]:
-                if self.treasures[2] == 1:
+                if self.treasures[i][2] == 1:
                     item = Sword("Sword", "Kill monster on adjacent tile")
-                elif self.treasures[2] == 2:
+                elif self.treasures[i][2] == 2:
                     item = Revolver("Revolver", "Shoot a monster, 6 bullets")
-                elif self.treasures[2] == 3:
-                    item = Boots("Boots", "Move twice per turn")
+                elif self.treasures[i][2] == 3:
+                    item = Boots("Boots", "Move twice every other turn")
                 else:
                     item = Armor("Armor", "One extra health per level")
                 
                 player.add_to_inventory(item)
-                print(f"You got [{item.name}]! Description: {item.description}")
                 self.treasures.pop(i)
                 break
          
@@ -143,16 +146,20 @@ class Player:
                 
         if direction.startswith("w") and self.row > 0 and wall_north == False:
             self.row -= 1
-        elif direction.startswith("s") and self.row < game.board_size - 1 and wall_south == False:
+        elif direction.startswith("s") and self.row < game.board_rows - 1 and wall_south == False:
             self.row += 1
         elif direction.startswith("a") and self.col > 0 and wall_west == False:
             self.col -= 1
-        elif direction.startswith("d") and self.col < game.board_size - 1 and wall_east == False:
+        elif direction.startswith("d") and self.col < game.board_columns - 1 and wall_east == False:
             self.col += 1
             
     def add_to_inventory(self, item):
         if len(self.inventory) < 2:
             self.inventory.append(item)
+            print(f"You got [{item.name}]! Description: {item.description}")
+        else:
+            print(f"You found [{item.name}]! Description: {item.description}")
+            print("Inventory full! Choose an item to drop:")
             
     def view_inventory(self):
         if self.inventory:
@@ -208,9 +215,9 @@ def main():
         except ValueError:
             print("Please play a move.")
         
-        game.check_treasure(player)
+        game.get_treasure(player)
         if game.check_win(player):
-            game.print_board(player)
+            game.print_board(player, turn)
             break
         
         turn += 1
