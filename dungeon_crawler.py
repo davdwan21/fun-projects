@@ -10,8 +10,9 @@ import os
 # sword: kill a monster if you are on an adjacent square
 # gun: kill a monster if you have x y LOS, only has 6 bullets though
 # passives
-# boots: move twice every turn
-# armor: increases health by 1 (originally 2, now 3)
+# boots: move twice every other turn
+# armor: blocks one monster attack (effectively more health)
+# game balance wise, boots no diffs armor but idk how to fix that
 
 class Dungeon:
     def __init__(self):
@@ -114,12 +115,28 @@ class Dungeon:
                 elif self.treasures[i][2] == 3:
                     item = Boots("Boots", "Move twice every other turn")
                 else:
-                    item = Armor("Armor", "One extra health per level")
+                    item = Armor("Armor", "Blocks one monster attack")
                 
                 player.add_to_inventory(item)
                 self.treasures.pop(i)
                 break
-         
+    
+    def monster_move(self, player):
+        p_row, p_col = player.row, player.col
+        for monster in self.monsters:
+            monster_row, monster_col = monster[0], monster[1]
+            
+            if abs(monster_row - p_row) > abs(monster_col - p_col):
+                if p_row > monster_row:
+                    monster[0] += 1
+                else:
+                    monster[0] -= 1
+            else:
+                if p_col > monster_col:
+                    monster[1] += 1
+                else:
+                    monster[1] -= 1
+                
 class Player:
     def __init__(self):
         self.row = 0
@@ -181,6 +198,20 @@ class Player:
                         continue
             except ValueError:
                 print("Please choose an item to discard.")
+                
+    def check_armor(self):
+        if self.inventory:
+            for item in self.inventory:
+                if isinstance(item, Armor):
+                    return True
+        return False
+                
+    def check_boots(self):
+        if self.inventory:
+            for item in self.inventory:
+                if isinstance(item, Boots):
+                    return True
+        return False
             
     # def view_inventory(self):
     #    if self.inventory:
@@ -235,6 +266,9 @@ def main():
                     #     player.view_inventory()
                     if move == "w" or move == "a" or move == "s" or move == "d":
                         player.move(move, game)
+                        # if turn % 2 == 0 and player.check_boots():
+                        #     print("[Boots] passive: move again.")
+                        #     continue
                         break
                     else:
                         print("Please input a proper move.")
@@ -243,10 +277,13 @@ def main():
                 print("Please play a move.")
             
             game.get_treasure(player)
+            
             if game.check_win(player):
                 game.print_board(player, turn)
                 break
             
+            if turn % 2 == 0:
+                game.monster_move(player)
             turn += 1
             #os.system("cls")
             
