@@ -15,8 +15,8 @@ import os
 
 class Dungeon:
     def __init__(self):
-        self.board_rows = 7 # hard coded for now, later random
-        self.board_columns = 7
+        self.board_rows = random.randint(6, 8)
+        self.board_columns = random.randint(5, 7)
         self.exit_pos = [self.board_rows - 1, self.board_columns - 1]
         occupied_spaces = [[0, 0], self.exit_pos]
         
@@ -80,7 +80,7 @@ class Dungeon:
         print(self.monsters)
         
     def check_win(self, player):
-        if [player.row, player.col] == self.exit_pos:
+        if [player.col, player.row] == self.exit_pos:
             print("You win!")
             return True
         return False
@@ -89,15 +89,15 @@ class Dungeon:
         p_row, p_col = player.row, player.col
         board = [[" - " for _ in range(self.board_rows)] for _ in range(self.board_columns)]
         board[p_row][p_col] = "P"
-        board[self.exit_pos[0]][self.exit_pos[1]] = "E"
+        board[self.exit_pos[1]][self.exit_pos[0]] = "E"
         for wall in self.walls:
-            board[wall[0]][wall[1]] = "#"
+            board[wall[1]][wall[0]] = "#"
         for treasure in self.treasures:
-            board[treasure[0]][treasure[1]] = "T"
+            board[treasure[1]][treasure[0]] = "T"
         for monster in self.monsters:
-            board[monster[0]][monster[1]] = "M"
+            board[monster[1]][monster[0]] = "M"
         
-        print(f" Turn: {turn} | Score: {player.score}")
+        print(f" Turn: {turn} | Floor: {player.score}")
         if player.inventory:
             print("---Inventory---")
             print(tabulate([[item.name for item in player.inventory]]))
@@ -106,7 +106,7 @@ class Dungeon:
     def get_treasure(self, player):
         p_row, p_col = player.row, player.col
         for i in range(len(self.treasures)):
-            if [p_row, p_col] == self.treasures[i][0:2]:
+            if [p_col, p_row] == self.treasures[i][0:2]:
                 if self.treasures[i][2] == 1:
                     item = Sword("Sword", "Kill monster on adjacent tile")
                 elif self.treasures[i][2] == 2:
@@ -124,7 +124,7 @@ class Player:
     def __init__(self):
         self.row = 0
         self.col = 0
-        self.score = 0
+        self.score = 1
         self.inventory = []
         self.health = 2
         
@@ -135,22 +135,25 @@ class Player:
         wall_west = False
         
         for wall in game.walls:
-            if self.row == wall[0] and self.col == wall[1] - 1:
+            if self.row == wall[1] and self.col == wall[0] - 1:
                 wall_east = True
-            if self.row == wall[0] and self.col == wall[1] + 1:
+            if self.row == wall[1] and self.col == wall[0] + 1:
                 wall_west = True
-            if self.row == wall[0] - 1 and self.col == wall[1]:
+            if self.row == wall[1] - 1 and self.col == wall[0]:
                 wall_south = True
-            if self.row == wall[0] + 1 and self.col == wall[1]:
+            if self.row == wall[1] + 1 and self.col == wall[0]:
                 wall_north = True
-                
+        
+        print("#### ", self.row, self.col, wall_north, wall_east, wall_south, wall_west)
+        print("#### ", game.walls, game.board_rows, game.board_columns)
         if direction.startswith("w") and self.row > 0 and wall_north == False:
             self.row -= 1
-        elif direction.startswith("s") and self.row < game.board_rows - 1 and wall_south == False:
+        elif direction.startswith("s") and self.row < game.board_columns - 1 and wall_south == False:
             self.row += 1
         elif direction.startswith("a") and self.col > 0 and wall_west == False:
             self.col -= 1
-        elif direction.startswith("d") and self.col < game.board_columns - 1 and wall_east == False:
+        elif direction.startswith("d") and self.col < game.board_rows - 1 and wall_east == False:
+            print("#### ", "is this running?")
             self.col += 1
             
     def add_to_inventory(self, item):
@@ -160,12 +163,30 @@ class Player:
         else:
             print(f"You found [{item.name}]! Description: {item.description}")
             print("Inventory full! Choose an item to drop:")
+            try:
+                while True:
+                    choice = int(input(f"(1) for {self.inventory[0]}, (2) for {self.inventory[1]}, (3) for {item}"))
+                    if choice == 1:
+                        self.inventory.pop(0)
+                        self.inventory.append(item)
+                        break
+                    elif choice == 2:
+                        self.inventory.pop(1)
+                        self.inventory.append(item)
+                        break
+                    elif choice == 3:
+                        break
+                    else:
+                        print("Please choose an item to discard.")
+                        continue
+            except ValueError:
+                print("Please choose an item to discard.")
             
-    def view_inventory(self):
-        if self.inventory:
-            print(tabulate(self.inventory, tablefmt="grid"))
-        else:
-            print("Inventory empty.")
+    # def view_inventory(self):
+    #    if self.inventory:
+    #        print(tabulate(self.inventory, tablefmt="grid"))
+    #    else:
+    #        print("Inventory empty.")
         
 class Item:
     def __init__(self, name, description):
@@ -173,7 +194,7 @@ class Item:
         self.description = description
     
     def __str__(self):
-        return f"{self.name} + {self.description}"
+        return f"{self.name}: {self.description}"
 
 class Sword(Item):
     pass
@@ -191,37 +212,47 @@ class Monster:
     pass
 
 def main():
-    game = Dungeon()
+    level = 1
     player = Player()
-    turn = 1
     
-    while True: # each iteration should be a "turn"
-        game.print_board(player, turn)
-        # debug printing
-        for item in player.inventory:
-            print(str(item))
-            
-        try:
-            while True:
-                move = input("(W) (A) (S) (D) to move or (I) for inventory: ").lower()
-                if move == "i":
-                    player.view_inventory()
-                elif move == "w" or move == "a" or move == "s" or move == "d":
-                    player.move(move, game)
-                    break
-                else:
-                    print("Please input a proper move.")
-                    continue
-        except ValueError:
-            print("Please play a move.")
+    while True: # while loop for game
+        game = Dungeon()
+        turn = 1
         
-        game.get_treasure(player)
-        if game.check_win(player):
+        print(f"Entering floor {level}")
+        player.row, player.col = 0, 0
+        
+        while True: # while loop for levels
             game.print_board(player, turn)
-            break
-        
-        turn += 1
-        #os.system("cls")
+            # debug printing
+            for item in player.inventory:
+                print(str(item))
+                
+            try:
+                while True:
+                    move = input("(W) (A) (S) (D) to move: ").lower()
+                    # if move == "i":
+                    #     player.view_inventory()
+                    if move == "w" or move == "a" or move == "s" or move == "d":
+                        player.move(move, game)
+                        break
+                    else:
+                        print("Please input a proper move.")
+                        continue
+            except ValueError:
+                print("Please play a move.")
+            
+            game.get_treasure(player)
+            if game.check_win(player):
+                game.print_board(player, turn)
+                break
+            
+            turn += 1
+            #os.system("cls")
+            
+        print(f"Floor {level} passed in {turn} moves!")
+        player.score += 1
+        level += 1
 
 if __name__ == "__main__":
     main()
