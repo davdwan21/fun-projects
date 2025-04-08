@@ -64,7 +64,7 @@ class Dungeon:
         # monster generation
         self.monsters = []
         num_monsters = 0
-        while num_monsters < 3: # hard coded, adjust later
+        while num_monsters < 1: # hard coded, adjust later
             row = random.randint(0, self.board_rows - 1)
             col = random.randint(0, self.board_columns - 1)
             
@@ -126,16 +126,47 @@ class Dungeon:
         for monster in self.monsters:
             monster_row, monster_col = monster[0], monster[1]
             
-            if abs(monster_row - p_row) > abs(monster_col - p_col):
-                if p_row > monster_row:
-                    monster[0] += 1
-                else:
+            wall_north = False
+            wall_east = False
+            wall_south = False
+            wall_west = False
+            
+            for wall in self.walls:
+                if monster_row == wall[1] and monster_col == wall[0] - 1:
+                    wall_east = True
+                if monster_row == wall[1] and monster_col == wall[0] + 1:
+                    wall_west = True
+                if monster_row == wall[1] - 1 and monster_col == wall[0]:
+                    wall_south = True
+                if monster_row == wall[1] + 1 and monster_col == wall[0]:
+                    wall_north = True
+            
+            print("###", wall_north, wall_east, wall_south, wall_west)
+            # x and y distances from player
+            # try to minimize the larger one if a wall isn't in the way
+            # otherwise minize the other one if a wall isnt in the way
+            # otherwise dont move
+            
+            row_distance = monster_row - p_row # + means monster is below player
+            col_distance = monster_col - p_col # + means monster is right of player
+            
+            if abs(row_distance) >= abs(col_distance):
+                print("###", "moving closer on row")
+                if monster_row > p_row and wall_north == False:
                     monster[0] -= 1
-            else:
-                if p_col > monster_col:
-                    monster[1] += 1
-                else:
+                elif col_distance > 0 and wall_west == False:
                     monster[1] -= 1
+                elif col_distance < 0 and wall_east == False:
+                    monster[1] += 1
+            elif abs(row_distance) < abs(col_distance):
+                print("###", "moving closer on col")
+                if monster_col > p_col and wall_west == False:
+                    monster[1] -= 1
+                elif row_distance > 0 and wall_north == False:
+                    monster[0] -= 1
+                elif row_distance < 0 and wall_south == False:
+                    monster[0] += 1
+                
                 
 class Player:
     def __init__(self):
@@ -161,8 +192,6 @@ class Player:
             if self.row == wall[1] + 1 and self.col == wall[0]:
                 wall_north = True
         
-        print("#### ", self.row, self.col, wall_north, wall_east, wall_south, wall_west)
-        print("#### ", game.walls, game.board_rows, game.board_columns)
         if direction.startswith("w") and self.row > 0 and wall_north == False:
             self.row -= 1
         elif direction.startswith("s") and self.row < game.board_columns - 1 and wall_south == False:
