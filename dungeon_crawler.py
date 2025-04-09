@@ -123,8 +123,9 @@ class Dungeon:
     
     def monster_move(self, player):
         p_row, p_col = player.row, player.col
+        print(self.monsters)
         for monster in self.monsters:
-            monster_row, monster_col = monster[0], monster[1]
+            monster_col, monster_row = monster[0], monster[1]
             
             wall_north = False
             wall_east = False
@@ -149,23 +150,28 @@ class Dungeon:
             
             row_distance = monster_row - p_row # + means monster is below player
             col_distance = monster_col - p_col # + means monster is right of player
-            
+            print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
             if abs(row_distance) >= abs(col_distance):
                 print("###", "moving closer on row")
                 if monster_row > p_row and wall_north == False:
-                    monster[0] -= 1
-                elif col_distance > 0 and wall_west == False:
                     monster[1] -= 1
-                elif col_distance < 0 and wall_east == False:
+                    print("this is running")
+                elif monster_row < p_row and wall_south == False:
                     monster[1] += 1
+                elif col_distance > 0 and wall_west == False:
+                    monster[0] -= 1
+                elif col_distance < 0 and wall_east == False:
+                    monster[0] += 1
             elif abs(row_distance) < abs(col_distance):
                 print("###", "moving closer on col")
                 if monster_col > p_col and wall_west == False:
-                    monster[1] -= 1
-                elif row_distance > 0 and wall_north == False:
                     monster[0] -= 1
-                elif row_distance < 0 and wall_south == False:
+                elif monster_col < p_col and wall_east == False:
                     monster[0] += 1
+                elif row_distance > 0 and wall_north == False:
+                    monster[1] -= 1
+                elif row_distance < 0 and wall_south == False:
+                    monster[1] += 1
                 
                 
 class Player:
@@ -199,7 +205,6 @@ class Player:
         elif direction.startswith("a") and self.col > 0 and wall_west == False:
             self.col -= 1
         elif direction.startswith("d") and self.col < game.board_rows - 1 and wall_east == False:
-            print("#### ", "is this running?")
             self.col += 1
             
     def add_to_inventory(self, item):
@@ -311,8 +316,8 @@ def main():
                 game.print_board(player, turn)
                 break
             
-            if turn % 2 == 0:
-                game.monster_move(player)
+            #if turn % 2 == 0:
+            game.monster_move(player)
             turn += 1
             #os.system("cls")
             
