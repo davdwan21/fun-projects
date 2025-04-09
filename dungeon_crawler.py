@@ -64,7 +64,7 @@ class Dungeon:
         # monster generation
         self.monsters = []
         num_monsters = 0
-        while num_monsters < 1: # hard coded, adjust later
+        while num_monsters < 3: # hard coded, adjust later
             row = random.randint(0, self.board_rows - 1)
             col = random.randint(0, self.board_columns - 1)
             
@@ -104,7 +104,7 @@ class Dungeon:
             print(tabulate([[item.name for item in player.inventory]]))
         print(tabulate(board, tablefmt="grid"))
         
-    def get_treasure(self, player):
+    def check_and_get_treasure(self, player):
         p_row, p_col = player.row, player.col
         for i in range(len(self.treasures)):
             if [p_col, p_row] == self.treasures[i][0:2]:
@@ -123,7 +123,7 @@ class Dungeon:
     
     def monster_move(self, player):
         p_row, p_col = player.row, player.col
-        print(self.monsters)
+
         for monster in self.monsters:
             monster_col, monster_row = monster[0], monster[1]
             
@@ -172,6 +172,19 @@ class Dungeon:
                     monster[1] -= 1
                 elif row_distance < 0 and wall_south == False:
                     monster[1] += 1
+                    
+        print("#", p_row, p_col, self.monsters)
+    
+    def check_monster_attack(self, player):
+        p_row, p_col = player.row, player.col
+        print("##", self.monsters, p_row, p_col)
+        for i in range(len(self.monsters)):
+            print(self.monsters[i][1], self.monsters[i][0])
+            if self.monsters[i][1] == p_row and self.monsters[i][0] == p_col:
+                print("&", "is this running?")
+                player.health -= 1
+                self.monsters.pop(i)
+                break
                 
                 
 class Player:
@@ -283,6 +296,7 @@ def main():
     while True: # while loop for game
         game = Dungeon()
         turn = 1
+        player_dead = False
         
         print(f"Entering floor {level}")
         player.row, player.col = 0, 0
@@ -310,17 +324,28 @@ def main():
             except ValueError:
                 print("Please play a move.")
             
-            game.get_treasure(player)
+            game.check_and_get_treasure(player)
             
             if game.check_win(player):
                 game.print_board(player, turn)
                 break
             
-            #if turn % 2 == 0:
-            game.monster_move(player)
+            if turn % 2 == 0:
+                game.monster_move(player)
+            
+            game.check_monster_attack(player)
+            if player.health == 0:
+                player_dead = True
+                break
+            
             turn += 1
             #os.system("cls")
             
+        if player_dead:
+            game.print_board(player, turn)
+            print(f"You died on floor {level}...")
+            break
+        
         print(f"Floor {level} passed in {turn} moves!")
         player.score += 1
         level += 1
