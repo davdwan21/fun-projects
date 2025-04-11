@@ -48,23 +48,26 @@ class Dungeon:
         
         # treasure generation
         self.treasures = []
-        num_treasures = 0
-        while num_treasures < 3: # hard coded, adjust later
-            row = random.randint(0, self.board_rows - 1)
-            col = random.randint(0, self.board_columns - 1)
+        treasure_choices = [1, 2, 3, 4]
+        chosen_treasures = random.sample(treasure_choices, 3) # hard coded
+        for treasure_type in chosen_treasures:
+            while True:
+                row = random.randint(0, self.board_rows - 1)
+                col = random.randint(0, self.board_columns - 1)
             
-            if [row, col] in occupied_spaces:
-                continue
+                if [row, col] in occupied_spaces:
+                    continue
+                else:
+                    break
             
-            item_type = random.randint(1, 4)
+            item_type = treasure_type
             self.treasures.append([row, col, item_type])
             occupied_spaces.append([row, col])
-            num_treasures += 1
             
         # monster generation
         self.monsters = []
         num_monsters = 0
-        while num_monsters < 3: # hard coded, adjust later
+        while num_monsters < 1: # hard coded, adjust later
             row = random.randint(0, self.board_rows - 1)
             col = random.randint(0, self.board_columns - 1)
             
@@ -113,7 +116,7 @@ class Dungeon:
                 elif self.treasures[i][2] == 2:
                     item = Revolver("Revolver", "Shoot a monster, 6 bullets")
                 elif self.treasures[i][2] == 3:
-                    item = Boots("Boots", "Move twice every other turn")
+                    item = Boots("Boots", "Move twice every third turn")
                 else:
                     item = Armor("Armor", "Blocks one monster attack")
                 
@@ -226,10 +229,10 @@ class Player:
             print(f"You got [{item.name}]! Description: {item.description}")
         else:
             print(f"You found [{item.name}]! Description: {item.description}")
-            print("Inventory full! Choose an item to drop:")
+            print("Inventory full! Choose an item to drop: ")
             try:
                 while True:
-                    choice = int(input(f"(1) for {self.inventory[0]}, (2) for {self.inventory[1]}, (3) for {item}"))
+                    choice = int(input(f"(1) for {self.inventory[0]}, (2) for {self.inventory[1]}, (3) for {item} "))
                     if choice == 1:
                         self.inventory.pop(0)
                         self.inventory.append(item)
@@ -281,7 +284,9 @@ class Revolver(Item):
     pass
 
 class Boots(Item):
-    pass
+    def __init__(self, name, description):
+        super().__init__(name, description)
+        self.active = True
 
 class Armor(Item):
     pass
@@ -295,17 +300,25 @@ def main():
     
     while True: # while loop for game
         game = Dungeon()
-        turn = 1
+        player_turn = 1 # accounts for boots passive
+        game_turn = 1
         player_dead = False
         
         print(f"Entering floor {level}")
         player.row, player.col = 0, 0
         
         while True: # while loop for levels
-            game.print_board(player, turn)
+            game.print_board(player, game_turn)
             # debug printing
             for item in player.inventory:
                 print(str(item))
+            print(player_turn, game_turn)
+                
+            # activate boots if the player turn is the next player turn)
+            if player_turn % 3 == 1 and player.check_boots():
+                for item in player.inventory:
+                    if isinstance(item, Boots):
+                        item.active = True
                 
             try:
                 while True:
@@ -327,10 +340,19 @@ def main():
             game.check_and_get_treasure(player)
             
             if game.check_win(player):
-                game.print_board(player, turn)
+                game.print_board(player, game_turn)
                 break
             
-            if turn % 2 == 0:
+            # use boots if player turn is mult of 3 (player turn to be played on)
+            if player_turn % 3 == 0 and player.check_boots():
+                print("[Boots] passive: move again.")
+                for item in player.inventory:
+                    if isinstance(item, Boots):
+                        item.active = False
+                player_turn += 1
+                continue
+            
+            if game_turn % 2 == 0:
                 game.monster_move(player)
             
             game.check_monster_attack(player)
@@ -338,15 +360,16 @@ def main():
                 player_dead = True
                 break
             
-            turn += 1
+            player_turn += 1
+            game_turn += 1
             #os.system("cls")
             
         if player_dead:
-            game.print_board(player, turn)
+            game.print_board(player, game_turn)
             print(f"You died on floor {level}...")
             break
         
-        print(f"Floor {level} passed in {turn} moves!")
+        print(f"Floor {level} passed in {game_turn} moves!")
         player.score += 1
         level += 1
 
