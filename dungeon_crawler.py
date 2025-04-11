@@ -98,7 +98,7 @@ class Dungeon:
         for monster in self.monsters:
             board[monster[1]][monster[0]] = "M"
         
-        print(f" Turn: {turn} | Floor: {player.score}")
+        print(f" Turn: {turn} | Floor: {player.score} | Health: {player.health}")
         if player.inventory:
             print("---Inventory---")
             print(tabulate([[item.name for item in player.inventory]]))
@@ -153,24 +153,24 @@ class Dungeon:
             print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
             if abs(row_distance) >= abs(col_distance):
                 print("###", "moving closer on row")
-                if monster_row > p_row and wall_north == False:
+                if monster_row > p_row and wall_north == False and [monster[0] - 1, monster[1]] not in self.monsters:
                     monster[1] -= 1
                     print("this is running")
-                elif monster_row < p_row and wall_south == False:
+                elif monster_row < p_row and wall_south == False and [monster[0] + 1, monster[1]] not in self.monsters:
                     monster[1] += 1
-                elif col_distance > 0 and wall_west == False:
+                elif col_distance > 0 and wall_west == False and [monster[0], monster[1] - 1] not in self.monsters:
                     monster[0] -= 1
-                elif col_distance < 0 and wall_east == False:
+                elif col_distance < 0 and wall_east == False and [monster[0], monster[1] + 1] not in self.monsters:
                     monster[0] += 1
             elif abs(row_distance) < abs(col_distance):
                 print("###", "moving closer on col")
-                if monster_col > p_col and wall_west == False:
+                if monster_col > p_col and wall_west == False and [monster[0], monster[1] - 1] not in self.monsters:
                     monster[0] -= 1
-                elif monster_col < p_col and wall_east == False:
+                elif monster_col < p_col and wall_east == False and [monster[0], monster[1] + 1] not in self.monsters:
                     monster[0] += 1
-                elif row_distance > 0 and wall_north == False:
+                elif row_distance > 0 and wall_north == False and [monster[0] - 1, monster[1]] not in self.monsters:
                     monster[1] -= 1
-                elif row_distance < 0 and wall_south == False:
+                elif row_distance < 0 and wall_south == False and [monster[0] + 1, monster[1]] not in self.monsters:
                     monster[1] += 1
                     
         print("#", p_row, p_col, self.monsters)
