@@ -4,6 +4,7 @@ import time
 import os
 
 # choose to either move or active item on a turn
+# sword: 
 class Game:
     def player_action(self, player, board):
         print("(W) (A) (S) (D) to move", end="")
@@ -81,7 +82,7 @@ class Dungeon:
         # monster generation
         self.monsters = []
         num_monsters = 0
-        while num_monsters < 1: # hard coded, adjust later
+        while num_monsters < 3: # hard coded, adjust later
             row = random.randint(0, self.board_rows - 1)
             col = random.randint(0, self.board_columns - 1)
             
@@ -302,6 +303,22 @@ class Boots(Item):
         super().__init__(name, description)
         self.active = True
 
+    def activate_boots(player_turn, player):
+        if player_turn % 3 == 1 and player.check_boots():
+            for item in player.inventory:
+                if isinstance(item, Boots):
+                    item.active = True
+
+    def use_boots(player_turn, player):
+        if player_turn % 3 == 0 and player.check_boots():
+            print("[Boots] passive: move again.")
+            for item in player.inventory:
+                if isinstance(item, Boots):
+                    item.active = False
+                    return True
+        
+        return False
+
 class Armor(Item):
     pass
 
@@ -330,11 +347,8 @@ def main():
             print(player_turn, game_turn)
                 
             # activate boots if the player turn is the next player turn)
-            if player_turn % 3 == 1 and player.check_boots():
-                for item in player.inventory:
-                    if isinstance(item, Boots):
-                        item.active = True
-                
+            Boots.activate_boots(player_turn, player)
+
             game.player_action(player, board)
             
             board.check_and_get_treasure(player)
@@ -343,12 +357,9 @@ def main():
                 board.print_board(player, game_turn)
                 break
             board
+
             # use boots if player turn is mult of 3 (player turn to be played on)
-            if player_turn % 3 == 0 and player.check_boots():
-                print("[Boots] passive: move again.")
-                for item in player.inventory:
-                    if isinstance(item, Boots):
-                        item.active = False
+            if Boots.use_boots(player_turn, player):
                 player_turn += 1
                 continue
             
