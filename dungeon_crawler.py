@@ -3,16 +3,30 @@ import random
 import time
 import os
 
-# current ideas:
-# see how many levels you can get through (each level is a dungeon)
-# various items, you can only hold 2 at once though
-# actives
-# sword: kill a monster if you are on an adjacent square
-# gun: kill a monster if you have x y LOS, only has 6 bullets though
-# passives
-# boots: move twice every other turn
-# armor: blocks one monster attack (effectively more health)
-# game balance wise, boots no diffs armor but idk how to fix that
+# choose to either move or active item on a turn
+class Game:
+    def player_action(self, player, board):
+        print("(W) (A) (S) (D) to move", end="")
+        if player.inventory:
+            for i in range(len(player.inventory)):
+                if isinstance(player.inventory[i], Sword) or isinstance(player.inventory[i], Revolver):
+                    print(f" | ({i + 1}) for {player.inventory[i].name}", end="")
+        print(": ", end="")
+
+        try:
+            while True:
+                move = input().lower()
+                if move == "w" or move == "a" or move == "s" or move == "d":
+                    player.move(move, board)
+                    break
+                elif move == "1" or move == "2":
+                    pass
+                    break
+                else:
+                    print("Please input a proper move.")
+                    continue
+        except ValueError:
+            print("Please play a move.")
 
 class Dungeon:
     def __init__(self):
@@ -112,7 +126,7 @@ class Dungeon:
         for i in range(len(self.treasures)):
             if [p_col, p_row] == self.treasures[i][0:2]:
                 if self.treasures[i][2] == 1:
-                    item = Sword("Sword", "Kill monster on adjacent tile")
+                    item = Sword("Sword", "Kill monster on adjacent tile, ")
                 elif self.treasures[i][2] == 2:
                     item = Revolver("Revolver", "Shoot a monster, 6 bullets")
                 elif self.treasures[i][2] == 3:
@@ -297,9 +311,10 @@ class Monster:
 def main():
     level = 1
     player = Player()
+    game = Game()
     
     while True: # while loop for game
-        game = Dungeon()
+        board = Dungeon()
         player_turn = 1 # accounts for boots passive
         game_turn = 1
         player_dead = False
@@ -308,7 +323,7 @@ def main():
         player.row, player.col = 0, 0
         
         while True: # while loop for levels
-            game.print_board(player, game_turn)
+            board.print_board(player, game_turn)
             # debug printing
             for item in player.inventory:
                 print(str(item))
@@ -320,29 +335,14 @@ def main():
                     if isinstance(item, Boots):
                         item.active = True
                 
-            try:
-                while True:
-                    move = input("(W) (A) (S) (D) to move: ").lower()
-                    # if move == "i":
-                    #     player.view_inventory()
-                    if move == "w" or move == "a" or move == "s" or move == "d":
-                        player.move(move, game)
-                        # if turn % 2 == 0 and player.check_boots():
-                        #     print("[Boots] passive: move again.")
-                        #     continue
-                        break
-                    else:
-                        print("Please input a proper move.")
-                        continue
-            except ValueError:
-                print("Please play a move.")
+            game.player_action(player, board)
             
-            game.check_and_get_treasure(player)
+            board.check_and_get_treasure(player)
             
-            if game.check_win(player):
-                game.print_board(player, game_turn)
+            if board.check_win(player):
+                board.print_board(player, game_turn)
                 break
-            
+            board
             # use boots if player turn is mult of 3 (player turn to be played on)
             if player_turn % 3 == 0 and player.check_boots():
                 print("[Boots] passive: move again.")
@@ -353,9 +353,9 @@ def main():
                 continue
             
             if game_turn % 2 == 0:
-                game.monster_move(player)
+                board.monster_move(player)
             
-            game.check_monster_attack(player)
+            board.check_monster_attack(player)
             if player.health == 0:
                 player_dead = True
                 break
@@ -365,7 +365,7 @@ def main():
             #os.system("cls")
             
         if player_dead:
-            game.print_board(player, game_turn)
+            board.print_board(player, game_turn)
             print(f"You died on floor {level}...")
             break
         
