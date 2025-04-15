@@ -4,7 +4,7 @@ import time
 import os
 
 # choose to either move or active item on a turn
-# sword: 
+# sword: on turn, choose to use sword + slash in a certain direction.
 class Game:
     def player_action(self, player, board):
         print("(W) (A) (S) (D) to move", end="")
@@ -21,7 +21,8 @@ class Game:
                     player.move(move, board)
                     break
                 elif move == "1" or move == "2":
-                    pass
+                    item = player.inventory[int(move) - 1]
+                    player.use_item(item, board, player)
                     break
                 else:
                     print("Please input a proper move.")
@@ -277,6 +278,12 @@ class Player:
                 if isinstance(item, Boots):
                     return True
         return False
+    
+    def use_item(self, item, board, player):
+        if isinstance(item, Sword):
+            item.slash()
+        elif isinstance(item, Revolver):
+            item.shoot()
             
     # def view_inventory(self):
     #    if self.inventory:
@@ -293,10 +300,19 @@ class Item:
         return f"{self.name}: {self.description}"
 
 class Sword(Item):
-    pass
+    def slash(self, board, player):
+        try:
+            while True:
+                direction = input("(W) (A) (S) (D) direction to slash: ").lower()
+                if direction == "w":
+                    for monster in board.monsters:
+                        if 
+        except ValueError:
+            print("Please input a direction.")
 
 class Revolver(Item):
-    pass
+    def shoot(self, board, player):
+        pass
 
 class Boots(Item):
     def __init__(self, name, description):
