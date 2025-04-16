@@ -159,6 +159,7 @@ class Player:
         self.score = 1
         self.inventory = []
         self.health = 2
+        self.monsters_killed = 0
         
     def move(self, direction, game):
         wall_north = False
@@ -227,7 +228,7 @@ class Player:
     
     def use_item(self, item, board, player):
         if isinstance(item, Sword):
-            item.slash()
+            item.slash(board, player)
         elif isinstance(item, Revolver):
             item.shoot()
             
@@ -247,12 +248,35 @@ class Item:
 
 class Sword(Item):
     def slash(self, board, player):
+        p_row, p_col = player.row, player.col
         try:
             while True:
                 direction = input("(W) (A) (S) (D) direction to slash: ").lower()
                 if direction == "w":
-                    for monster in board.monsters:
-                        pass
+                    attacked_square = [p_row - 1, p_col]
+                    break
+                elif direction == "a":
+                    attacked_square = [p_row, p_col - 1]
+                    break
+                elif direction == "s":
+                    attacked_square = [p_row + 1, p_col]
+                    break
+                elif direction == "d":
+                    attacked_square = [p_row, p_col + 1]
+                    break
+                else:
+                    print("Improper direction.")
+                    continue
+
+            # attack phase
+            for i in range(len(board.monsters)):
+                if [board.monsters[i].col, board.monsters[i].row] == attacked_square:
+                    print("Monster killed!")
+                    player.monsters_killed += 1
+                    board.monsters.pop(i)
+                    break
+                    
+
         except ValueError:
             print("Please input a direction.")
 
@@ -390,7 +414,7 @@ def main():
             
             player_turn += 1
             game_turn += 1
-            #os.system("cls")
+            os.system("clear")
             
         if player_dead:
             board.print_board(player, game_turn)
@@ -400,6 +424,8 @@ def main():
         print(f"Floor {level} passed in {game_turn} moves!")
         player.score += 1
         level += 1
+
+        os.system("clear")
 
 if __name__ == "__main__":
     main()
