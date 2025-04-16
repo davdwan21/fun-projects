@@ -90,7 +90,8 @@ class Dungeon:
             if [row, col] in occupied_spaces:
                 continue
             
-            self.monsters.append([row, col])
+            monster = Monster(row, col)
+            self.monsters.append(monster)
             occupied_spaces.append([row, col])
             num_monsters += 1
         
@@ -115,7 +116,7 @@ class Dungeon:
         for treasure in self.treasures:
             board[treasure[1]][treasure[0]] = "T"
         for monster in self.monsters:
-            board[monster[1]][monster[0]] = "M"
+            board[monster.col][monster.row] = "M"
         
         print(f" Turn: {turn} | Floor: {player.score} | Health: {player.health}")
         if player.inventory:
@@ -140,66 +141,11 @@ class Dungeon:
                 self.treasures.pop(i)
                 break
     
-    def monster_move(self, player):
-        p_row, p_col = player.row, player.col
-
-        for monster in self.monsters:
-            monster_col, monster_row = monster[0], monster[1]
-            
-            wall_north = False
-            wall_east = False
-            wall_south = False
-            wall_west = False
-            
-            for wall in self.walls:
-                if monster_row == wall[1] and monster_col == wall[0] - 1:
-                    wall_east = True
-                if monster_row == wall[1] and monster_col == wall[0] + 1:
-                    wall_west = True
-                if monster_row == wall[1] - 1 and monster_col == wall[0]:
-                    wall_south = True
-                if monster_row == wall[1] + 1 and monster_col == wall[0]:
-                    wall_north = True
-            
-            print("###", wall_north, wall_east, wall_south, wall_west)
-            # x and y distances from player
-            # try to minimize the larger one if a wall isn't in the way
-            # otherwise minize the other one if a wall isnt in the way
-            # otherwise dont move
-            
-            row_distance = monster_row - p_row # + means monster is below player
-            col_distance = monster_col - p_col # + means monster is right of player
-            print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
-            if abs(row_distance) >= abs(col_distance):
-                print("###", "moving closer on row")
-                if monster_row > p_row and wall_north == False and [monster[0] - 1, monster[1]] not in self.monsters:
-                    monster[1] -= 1
-                    print("this is running")
-                elif monster_row < p_row and wall_south == False and [monster[0] + 1, monster[1]] not in self.monsters:
-                    monster[1] += 1
-                elif col_distance > 0 and wall_west == False and [monster[0], monster[1] - 1] not in self.monsters:
-                    monster[0] -= 1
-                elif col_distance < 0 and wall_east == False and [monster[0], monster[1] + 1] not in self.monsters:
-                    monster[0] += 1
-            elif abs(row_distance) < abs(col_distance):
-                print("###", "moving closer on col")
-                if monster_col > p_col and wall_west == False and [monster[0], monster[1] - 1] not in self.monsters:
-                    monster[0] -= 1
-                elif monster_col < p_col and wall_east == False and [monster[0], monster[1] + 1] not in self.monsters:
-                    monster[0] += 1
-                elif row_distance > 0 and wall_north == False and [monster[0] - 1, monster[1]] not in self.monsters:
-                    monster[1] -= 1
-                elif row_distance < 0 and wall_south == False and [monster[0] + 1, monster[1]] not in self.monsters:
-                    monster[1] += 1
-                    
-        print("#", p_row, p_col, self.monsters)
-    
     def check_monster_attack(self, player):
         p_row, p_col = player.row, player.col
         print("##", self.monsters, p_row, p_col)
         for i in range(len(self.monsters)):
-            print(self.monsters[i][1], self.monsters[i][0])
-            if self.monsters[i][1] == p_row and self.monsters[i][0] == p_col:
+            if self.monsters[i].col == p_row and self.monsters[i].row == p_col:
                 print("&", "is this running?")
                 player.health -= 1
                 self.monsters.pop(i)
@@ -306,7 +252,7 @@ class Sword(Item):
                 direction = input("(W) (A) (S) (D) direction to slash: ").lower()
                 if direction == "w":
                     for monster in board.monsters:
-                        if 
+                        pass
         except ValueError:
             print("Please input a direction.")
 
@@ -339,7 +285,61 @@ class Armor(Item):
     pass
 
 class Monster:
-    pass
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
+
+    def move(self, player, board):
+        p_row, p_col = player.row, player.col
+
+        # why the frick?
+        monster_col, monster_row = self.row, self.col
+        
+        wall_north = False
+        wall_east = False
+        wall_south = False
+        wall_west = False
+        
+        for wall in board.walls:
+            if monster_row == wall[1] and monster_col == wall[0] - 1:
+                wall_east = True
+            if monster_row == wall[1] and monster_col == wall[0] + 1:
+                wall_west = True
+            if monster_row == wall[1] - 1 and monster_col == wall[0]:
+                wall_south = True
+            if monster_row == wall[1] + 1 and monster_col == wall[0]:
+                wall_north = True
+        
+        print("###", wall_north, wall_east, wall_south, wall_west)
+        # x and y distances from player
+        # try to minimize the larger one if a wall isn't in the way
+        # otherwise minize the other one if a wall isnt in the way
+        # otherwise dont move
+        
+        row_distance = monster_row - p_row # + means monster is below player
+        col_distance = monster_col - p_col # + means monster is right of player
+        print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
+        if abs(row_distance) >= abs(col_distance):
+            print("###", "moving closer on row")
+            if monster_row > p_row and wall_north == False and [self.row - 1, self.col] not in board.monsters:
+                self.col -= 1
+                print("this is running")
+            elif monster_row < p_row and wall_south == False and [self.row + 1, self.col] not in board.monsters:
+                self.col += 1
+            elif col_distance > 0 and wall_west == False and [self.row, self.col - 1] not in board.monsters:
+                self.row -= 1
+            elif col_distance < 0 and wall_east == False and [self.row, self.col + 1] not in board.monsters:
+                self.row += 1
+        elif abs(row_distance) < abs(col_distance):
+            print("###", "moving closer on col")
+            if monster_col > p_col and wall_west == False and [self.row, self.col - 1] not in board.monsters:
+                self.row -= 1
+            elif monster_col < p_col and wall_east == False and [self.row, self.col + 1] not in board.monsters:
+                self.row += 1
+            elif row_distance > 0 and wall_north == False and [self.row - 1, self.col] not in board.monsters:
+                self.col -= 1
+            elif row_distance < 0 and wall_south == False and [self.row + 1, self.col] not in board.monsters:
+                self.col += 1
 
 def main():
     level = 1
@@ -380,7 +380,8 @@ def main():
                 continue
             
             if game_turn % 2 == 0:
-                board.monster_move(player)
+                for monster in board.monsters:
+                    monster.move(player, board)
             
             board.check_monster_attack(player)
             if player.health == 0:
