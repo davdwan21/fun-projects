@@ -10,7 +10,7 @@ class Game:
         print("(W) (A) (S) (D) to move", end="")
         if player.inventory:
             for i in range(len(player.inventory)):
-                if isinstance(player.inventory[i], Sword) or isinstance(player.inventory[i], Revolver):
+                if isinstance(player.inventory[i], Sword) or isinstance(player.inventory[i], Rifle):
                     print(f" | ({i + 1}) for {player.inventory[i].name}", end="")
         print(": ", end="")
 
@@ -129,9 +129,9 @@ class Dungeon:
         for i in range(len(self.treasures)):
             if [p_col, p_row] == self.treasures[i][0:2]:
                 if self.treasures[i][2] == 1:
-                    item = Sword("Sword", "Kill monster on adjacent tile, ")
+                    item = Sword("Sword", "Kill monsters on adjacent tile")
                 elif self.treasures[i][2] == 2:
-                    item = Revolver("Revolver", "Shoot a monster, 6 bullets")
+                    item = Rifle("Rifle", "Shoot monsters with 2 piercing bullets")
                 elif self.treasures[i][2] == 3:
                     item = Boots("Boots", "Move twice every third turn")
                 else:
@@ -229,8 +229,8 @@ class Player:
     def use_item(self, item, board, player):
         if isinstance(item, Sword):
             item.slash(board, player)
-        elif isinstance(item, Revolver):
-            item.shoot()
+        elif isinstance(item, Rifle):
+            item.shoot(board, player)
             
     # def view_inventory(self):
     #    if self.inventory:
@@ -268,21 +268,52 @@ class Sword(Item):
                     print("Improper direction.")
                     continue
 
+            print(f"You slash in the direction: ({direction.upper()})")
             # attack phase
+            # 5/7/25: need to change these to while loops
             for i in range(len(board.monsters)):
                 if [board.monsters[i].col, board.monsters[i].row] == attacked_square:
                     print("Monster killed!")
                     player.monsters_killed += 1
                     board.monsters.pop(i)
-                    break
-                    
+                    i -= 1
 
         except ValueError:
             print("Please input a direction.")
 
-class Revolver(Item):
+class Rifle(Item):
     def shoot(self, board, player):
-        pass
+        p_row, p_col = player.row, player.col
+        try:
+            while True:
+                direction = input("(W) (A) (S) (D) direction to fire: ").lower()
+                if direction == "w":
+                    attack_squares = [[p_row - i, p_col] for i in range(1, p_row)]
+                    break
+                elif direction == "a":
+                    attack_squares = [[p_row, p_col - i] for i in range(1, p_col)]
+                    break
+                elif direction == "s":
+                    attack_squares = [[p_row + i, p_col] for i in range(1, board.board_rows - p_row)]
+                    break
+                elif direction == "d":
+                    attack_squares = [[p_row, p_col + i] for i in range(1, board.board_columns - p_col)]
+                    break
+                else:
+                    print("Improper direction.")
+                    continue
+                
+            print(f"You shoot in the direction ({direction})")
+            for square in attack_squares:
+                for i in range(len(board.monsters)):
+                    if [board.monsters[i].col, board.monsters[i].row] == square:
+                        print("Monster killed!")
+                        player.monsters_killed += 1
+                        board.monsters.pop(i)
+                        i -= 1
+        except ValueError:
+            print("Please input a direction.")
+        
 
 class Boots(Item):
     def __init__(self, name, description):
