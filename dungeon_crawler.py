@@ -121,7 +121,13 @@ class Dungeon:
         print(f" Turn: {turn} | Floor: {player.score} | Health: {player.health}")
         if player.inventory:
             print("---Inventory---")
-            print(tabulate([[item.name for item in player.inventory]]))
+            item_list = []
+            for item in player.inventory:
+                item_name = item.name
+                if isinstance(item, Rifle):
+                    item_name += f": {item.ammo} ||"
+                item_list.append(item_name)
+            print(tabulate([item_list]))
         print(tabulate(board, tablefmt="grid"))
         
     def check_and_get_treasure(self, player):
@@ -131,7 +137,8 @@ class Dungeon:
                 if self.treasures[i][2] == 1:
                     item = Sword("Sword", "Kill monsters on adjacent tile")
                 elif self.treasures[i][2] == 2:
-                    item = Rifle("Rifle", "Shoot monsters with 2 piercing bullets")
+                    ammo = 3
+                    item = Rifle("Rifle", f"Shoot monsters with {ammo} piercing bullets", ammo)
                 elif self.treasures[i][2] == 3:
                     item = Boots("Boots", "Move twice every third turn")
                 else:
@@ -150,8 +157,7 @@ class Dungeon:
                 player.health -= 1
                 self.monsters.pop(i)
                 break
-                
-                
+                  
 class Player:
     def __init__(self):
         self.row = 0
@@ -270,19 +276,23 @@ class Sword(Item):
 
             print(f"You slash in the direction: ({direction.upper()})")
             # attack phase
-            # 5/7/25: need to change these to while loops
-            for i in range(len(board.monsters)):
+            i = len(board.monsters) - 1
+            while i >= 0:
                 if [board.monsters[i].col, board.monsters[i].row] == attacked_square:
-                    print("Monster killed!")
+                    print("Monster slashed!")
                     player.monsters_killed += 1
                     board.monsters.pop(i)
-                    i -= 1
-
+                i -= 1
         except ValueError:
             print("Please input a direction.")
 
 class Rifle(Item):
+    def __init__(self, name, description, ammo):
+        super().__init__(name, description)
+        self.ammo = ammo
+        
     def shoot(self, board, player):
+        self.ammo -= 1
         p_row, p_col = player.row, player.col
         try:
             while True:
@@ -305,15 +315,20 @@ class Rifle(Item):
                 
             print(f"You shoot in the direction ({direction})")
             for square in attack_squares:
-                for i in range(len(board.monsters)):
+                i = len(board.monsters) - 1
+                while i >= 0:
                     if [board.monsters[i].col, board.monsters[i].row] == square:
-                        print("Monster killed!")
+                        print("Monster shot!")
                         player.monsters_killed += 1
                         board.monsters.pop(i)
-                        i -= 1
+                    i -= 1
         except ValueError:
             print("Please input a direction.")
-        
+            
+    def drop_rifle(self):
+        if self.ammo == 0:
+            return True
+        return False
 
 class Boots(Item):
     def __init__(self, name, description):
@@ -443,6 +458,13 @@ def main():
                 player_dead = True
                 break
             
+            i = len(player.inventory)
+            while i >= 0:
+                if isinstance(player.inventory[i], Rifle):
+                    if player.inventory[i].ammo == 0:
+                        player.inventory.pop(i)
+                        print("Out of bullets!")                 
+            
             player_turn += 1
             game_turn += 1
             os.system("clear")
@@ -450,6 +472,7 @@ def main():
         if player_dead:
             board.print_board(player, game_turn)
             print(f"You died on floor {level}...")
+            print(f"Monsters slain: {player.monsters_killed}")
             break
         
         print(f"Floor {level} passed in {game_turn} moves!")
