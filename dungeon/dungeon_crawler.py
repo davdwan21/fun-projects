@@ -142,7 +142,11 @@ class Dungeon:
                     item_name += f": {item.ammo} ||"
                 item_list.append(item_name)
             print(tabulate([item_list]))
+        
+        if self.infested:
+            print(Fore.GREEN + "This floor is infested...")
         print(tabulate(board, tablefmt="grid"))
+        print(Fore.RESET)
         
     def check_and_get_treasure(self, player):
         p_row, p_col = player.row, player.col
@@ -463,9 +467,6 @@ def main():
         player.row, player.col = 0, 0
         
         while True: # while loop for levels
-            if board.infested:
-                print(Fore.GREEN)
-                
             board.print_board(player, game_turn)
             # debug printing
             for item in player.inventory:
