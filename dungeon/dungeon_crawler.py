@@ -3,6 +3,7 @@ import random
 import time
 import os
 from a_star import a_star_search
+from colorama import Fore
 
 # choose to either move or active item on a turn
 # sword: on turn, choose to use sword + slash in a certain direction.
@@ -32,12 +33,19 @@ class Game:
             print("Please play a move.")
 
 class Dungeon:
-    def __init__(self):
+    def __init__(self, level_num):
+        self.level_num = level_num
         self.board_rows = random.randint(6, 8)
         self.board_columns = random.randint(5, 7)
         self.exit_pos = [self.board_rows - 1, self.board_columns - 1]
         occupied_spaces = [[0, 0], self.exit_pos]
-        
+        self.infested = False
+
+        # is infested floor?
+        if (self.level_num % 10 > 5) and (self.level_num % 10 < 10):
+            if random.randint(1, 3) == 1:
+                self.infested = True
+
         # wall generation
         self.walls = []
         wall_origins = [[random.randint(1, self.board_rows - 2), random.randint(1, self.board_columns - 2)] for _ in range(int((self.board_rows * self.board_columns) ** 0.33))]
@@ -58,7 +66,7 @@ class Dungeon:
             if self.walls[i] == [0, 0] or self.walls[i] == [self.board_rows - 1, self.board_columns - 1]:
                 self.walls.pop(i)
                 
-        # complete random wall generation
+        # completely random wall generation
         #self.walls = [[random.randint(0, self.board_size - 1), random.randint(0, self.board_size - 1)] for _ in range(((self.board_size ** 2) * 2) // 5)]
         #for i in range(len(self.walls) - 1):
         #    if self.walls[i] == [0, 0] or self.walls[i] == [self.board_size - 1, self.board_size - 1]:
@@ -85,7 +93,11 @@ class Dungeon:
         # monster generation
         self.monsters = []
         num_monsters = 0
-        while num_monsters < 3: # hard coded, adjust later
+        max_monsters = 3 + (level_num // 5)
+        if self.infested:
+            max_monsters += 2
+        
+        while num_monsters < max_monsters:
             row = random.randint(0, self.board_rows - 1)
             col = random.randint(0, self.board_columns - 1)
             
@@ -156,6 +168,13 @@ class Dungeon:
         for i in range(len(self.monsters)):
             if self.monsters[i].col == p_row and self.monsters[i].row == p_col:
                 print("&", "is this running?")
+
+                armor_slot = player.check_armor()
+                if armor_slot >= 0:
+                    player.inventory.pop(armor_slot)
+                    self.monsters.pop(i)
+                    continue
+
                 player.health -= 1
                 self.monsters.pop(i)
                 break
@@ -222,10 +241,10 @@ class Player:
                 
     def check_armor(self):
         if self.inventory:
-            for item in self.inventory:
-                if isinstance(item, Armor):
-                    return True
-        return False
+            for i in range(len(self.inventory)):
+                if isinstance(self.inventory[i], Armor):
+                    return i
+        return -1
                 
     def check_boots(self):
         if self.inventory:
@@ -431,7 +450,7 @@ def main():
     
     while True: # while loop for game
         while True:
-            board = Dungeon()
+            board = Dungeon(level)
             if possible_board(board):
                 print("board is solvable")
                 break
@@ -444,6 +463,9 @@ def main():
         player.row, player.col = 0, 0
         
         while True: # while loop for levels
+            if board.infested:
+                print(Fore.GREEN)
+                
             board.print_board(player, game_turn)
             # debug printing
             for item in player.inventory:
@@ -472,6 +494,7 @@ def main():
                     monster.move(player, board)
             
             board.check_monster_attack(player)
+            
             if player.health == 0:
                 player_dead = True
                 break
