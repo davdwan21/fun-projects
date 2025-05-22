@@ -9,7 +9,7 @@ from colorama import Fore
 # sword: on turn, choose to use sword + slash in a certain direction.
 
 # WHY THE FRICK ARE ENEMIES IMMUNE TO RIFLES RANDOMLY
-class Game:
+class Game:        
     def player_action(self, player, board):
         print("(W) (A) (S) (D) to move", end="")
         if player.inventory:
@@ -38,27 +38,32 @@ class Game:
             print("Please play a move.")
 
     def main_menu(self):
-        print("---gamme namme---")
+        print("---GAME---")
         print(tabulate([["PLAY", "HOW TO PLAY", "EXIT"]]))
 
         while True:
             try:
                 user = input("Type to (P)lay, (H)ow to Play, or (E)xit.\n")
+                print(user.lower()[0])
                 if user.lower()[0] == "p":
                     break
                 elif user.lower()[0] == "e":
                     exit()
                 elif user.lower()[0] == "h":
-                    Game.how_to_play()
+                    os.system("clear")
+                    print("---HOW TO PLAY---")
+                    print(tabulate([["P", " The [P]layer: you move with (W) (A) (S) (D) and use items with (1) (2)"],
+                                    ["E", " Get to the [E]xit for each floor"],
+                                    ["#", " Walls block player and enemy movement"],
+                                    ["-", " Empty Spaces"],
+                                    ["M", " [M]onsters move towards the player and damage you on contact"],
+                                    ["T", " [T]reasures contain useful items in your journey"]], tablefmt="grid"))
+                    input("Press any button to continue.\n")
                 else:
                     print("Please make a valid input")
             except Exception:
                 print("Please make a valid input")
         os.system("clear")
-
-    @staticmethod
-    def how_to_play(self):
-        icons = tabulate["P", "E", "#", "-", "M", "T"]
 
 class Dungeon:
     def __init__(self, level_num):
