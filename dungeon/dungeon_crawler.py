@@ -43,7 +43,7 @@ class Game:
 
         while True:
             try:
-                user = input("(P)lay or (E)xit.\n")
+                user = input("Type to (P)lay or (E)xit.\n")
                 if user.lower()[0] == "p":
                     break
                 elif user.lower()[0] == "e":
