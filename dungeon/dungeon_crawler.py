@@ -39,20 +39,26 @@ class Game:
 
     def main_menu(self):
         print("---gamme namme---")
-        print(tabulate([["PLAY", "EXIT"]]))
+        print(tabulate([["PLAY", "HOW TO PLAY", "EXIT"]]))
 
         while True:
             try:
-                user = input("Type to (P)lay or (E)xit.\n")
+                user = input("Type to (P)lay, (H)ow to Play, or (E)xit.\n")
                 if user.lower()[0] == "p":
                     break
                 elif user.lower()[0] == "e":
                     exit()
+                elif user.lower()[0] == "h":
+                    Game.how_to_play()
                 else:
                     print("Please make a valid input")
             except Exception:
                 print("Please make a valid input")
         os.system("clear")
+
+    @staticmethod
+    def how_to_play(self):
+        icons = tabulate["P", "E", "#", "-", "M", "T"]
 
 class Dungeon:
     def __init__(self, level_num):
@@ -527,9 +533,9 @@ def main():
 
                 board.print_board(player, game_turn)
                 # debug printing
-                for item in player.inventory:
-                    print(str(item))
-                print(player_turn, game_turn)
+                # for item in player.inventory:
+                #    print(str(item))
+                # print(player_turn, game_turn)
                     
                 # activate boots if the player turn is the next player turn)
                 Boots.activate_boots(player_turn, player)
