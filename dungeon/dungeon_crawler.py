@@ -7,6 +7,8 @@ from colorama import Fore
 
 # choose to either move or active item on a turn
 # sword: on turn, choose to use sword + slash in a certain direction.
+
+# WHY THE FRICK ARE ENEMIES IMMUNE TO RIFLES RANDOMLY
 class Game:
     def player_action(self, player, board):
         print("(W) (A) (S) (D) to move", end="")
@@ -26,11 +28,31 @@ class Game:
                     item = player.inventory[int(move) - 1]
                     player.use_item(item, board, player)
                     break
+                elif move == "/":
+                    player.backdoor(board)
+                    break
                 else:
                     print("Please input a proper move.")
                     continue
         except ValueError:
             print("Please play a move.")
+
+    def main_menu(self):
+        print("---gamme namme---")
+        print(tabulate([["PLAY", "EXIT"]]))
+
+        while True:
+            try:
+                user = input("(P)lay or (E)xit.\n")
+                if user.lower()[0] == "p":
+                    break
+                elif user.lower()[0] == "e":
+                    exit()
+                else:
+                    print("Please make a valid input")
+            except Exception:
+                print("Please make a valid input")
+        os.system("clear")
 
 class Dungeon:
     def __init__(self, level_num):
@@ -40,12 +62,17 @@ class Dungeon:
         self.exit_pos = [self.board_rows - 1, self.board_columns - 1]
         occupied_spaces = [[0, 0], self.exit_pos]
         self.infested = False
+        self.blood_moon = False
 
-        # is infested floor?
-        if (self.level_num % 10 > 5) and (self.level_num % 10 < 10):
+        # blood moon floor takes precedence
+        if (self.level_num % 10 > 6) and (self.level_num % 10 < 10):
             if random.randint(1, 3) == 1:
+                self.blood_moon = True
+        # infested and blood moon cannot happen simultaneously
+        elif (self.level_num % 10 > 2) and (self.level_num % 10 < 10):
+            if random.randint(1, 4) == 1:
                 self.infested = True
-
+        
         # wall generation
         self.walls = []
         wall_origins = [[random.randint(1, self.board_rows - 2), random.randint(1, self.board_columns - 2)] for _ in range(int((self.board_rows * self.board_columns) ** 0.33))]
@@ -59,7 +86,7 @@ class Dungeon:
         for wall in wall_origins:
             self.walls.append(wall)
             occupied_spaces.append(wall)
-        print(self.walls)
+        # print(self.walls)
             
         # prevent the exit or player from being replaced by a wall
         for i in range(len(self.walls) - 1):
@@ -109,10 +136,10 @@ class Dungeon:
             occupied_spaces.append([row, col])
             num_monsters += 1
         
-        print(occupied_spaces)
-        print(self.walls)
-        print(self.treasures)
-        print(self.monsters)
+        # print(occupied_spaces)
+        # print(self.walls)
+        # print(self.treasures)
+        # print(self.monsters)
         
     def check_win(self, player):
         if [player.col, player.row] == self.exit_pos:
@@ -140,11 +167,16 @@ class Dungeon:
                 item_name = item.name
                 if isinstance(item, Rifle):
                     item_name += f": {item.ammo} ||"
+                elif isinstance(item, Sword):
+                    item_name += f": {item.durability} //"
                 item_list.append(item_name)
             print(tabulate([item_list]))
         
         if self.infested:
-            print(Fore.GREEN + "This floor is infested...")
+            print(Fore.GREEN + "This floor is infested... (Extra monsters)")
+        elif self.blood_moon:
+            print(Fore.RED + "The blood moon rises... (Monsters move faster)")
+
         print(tabulate(board, tablefmt="grid"))
         print(Fore.RESET)
         
@@ -153,9 +185,10 @@ class Dungeon:
         for i in range(len(self.treasures)):
             if [p_col, p_row] == self.treasures[i][0:2]:
                 if self.treasures[i][2] == 1:
-                    item = Sword("Sword", "Kill monsters on adjacent tile")
+                    durability = random.randint(6, 8)
+                    item = Sword("Sword", "Kill monsters on adjacent tiles", durability)
                 elif self.treasures[i][2] == 2:
-                    ammo = 3
+                    ammo = random.randint(2, 3)
                     item = Rifle("Rifle", f"Shoot monsters with {ammo} piercing bullets", ammo)
                 elif self.treasures[i][2] == 3:
                     item = Boots("Boots", "Move twice every third turn")
@@ -167,21 +200,25 @@ class Dungeon:
                 break
     
     def check_monster_attack(self, player):
+        damage_blocked = False
+
         p_row, p_col = player.row, player.col
-        print("##", self.monsters, p_row, p_col)
-        for i in range(len(self.monsters)):
+        # print("##", self.monsters, p_row, p_col)
+        for i in range(len(self.monsters) - 1, -1, -1):
             if self.monsters[i].col == p_row and self.monsters[i].row == p_col:
-                print("&", "is this running?")
+                # print("&", "is this running?")
 
                 armor_slot = player.check_armor()
                 if armor_slot >= 0:
                     player.inventory.pop(armor_slot)
                     self.monsters.pop(i)
+                    damage_blocked = True
                     continue
 
                 player.health -= 1
                 self.monsters.pop(i)
-                break
+
+        return damage_blocked
                      
 class Player:
     def __init__(self):
@@ -263,6 +300,11 @@ class Player:
         elif isinstance(item, Rifle):
             item.shoot(board, player)
             
+    # backdoor for debugging - get to later floors
+    def backdoor(self, board):
+        self.row = board.board_rows - 1
+        self.col = board.board_columns - 1
+
     # def view_inventory(self):
     #    if self.inventory:
     #        print(tabulate(self.inventory, tablefmt="grid"))
@@ -278,7 +320,12 @@ class Item:
         return f"{self.name}: {self.description}"
 
 class Sword(Item):
+    def __init__(self, name, description, durability):
+        super().__init__(name, description)
+        self.durability = durability
+
     def slash(self, board, player):
+        self.durability -= 1
         p_row, p_col = player.row, player.col
         try:
             while True:
@@ -349,11 +396,6 @@ class Rifle(Item):
                     i -= 1
         except ValueError:
             print("Please input a direction.")
-            
-    def drop_rifle(self):
-        if self.ammo == 0:
-            return True
-        return False
 
 class Boots(Item):
     def __init__(self, name, description):
@@ -368,7 +410,6 @@ class Boots(Item):
 
     def use_boots(player_turn, player):
         if player_turn % 3 == 0 and player.check_boots():
-            print("[Boots] passive: move again.")
             for item in player.inventory:
                 if isinstance(item, Boots):
                     item.active = False
@@ -384,6 +425,7 @@ class Monster:
         self.row = row
         self.col = col
 
+    # monster movement is switched row, col --> col, row
     def move(self, player, board):
         p_row, p_col = player.row, player.col
 
@@ -405,7 +447,7 @@ class Monster:
             if monster_row == wall[1] + 1 and monster_col == wall[0]:
                 wall_north = True
         
-        print("###", wall_north, wall_east, wall_south, wall_west)
+        # print("###", wall_north, wall_east, wall_south, wall_west)
         # x and y distances from player
         # try to minimize the larger one if a wall isn't in the way
         # otherwise minize the other one if a wall isnt in the way
@@ -413,12 +455,12 @@ class Monster:
         
         row_distance = monster_row - p_row # + means monster is below player
         col_distance = monster_col - p_col # + means monster is right of player
-        print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
+        # print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
         if abs(row_distance) >= abs(col_distance):
-            print("###", "moving closer on row")
+            # print("###", "moving closer on row")
             if monster_row > p_row and wall_north == False and [self.row - 1, self.col] not in board.monsters:
                 self.col -= 1
-                print("this is running")
+                # print("this is running")
             elif monster_row < p_row and wall_south == False and [self.row + 1, self.col] not in board.monsters:
                 self.col += 1
             elif col_distance > 0 and wall_west == False and [self.row, self.col - 1] not in board.monsters:
@@ -426,7 +468,7 @@ class Monster:
             elif col_distance < 0 and wall_east == False and [self.row, self.col + 1] not in board.monsters:
                 self.row += 1
         elif abs(row_distance) < abs(col_distance):
-            print("###", "moving closer on col")
+            # print("###", "moving closer on col")
             if monster_col > p_col and wall_west == False and [self.row, self.col - 1] not in board.monsters:
                 self.row -= 1
             elif monster_col < p_col and wall_east == False and [self.row, self.col + 1] not in board.monsters:
@@ -443,7 +485,7 @@ def possible_board(board):
     for wall in board.walls:
         board_vis[wall[1]][wall[0]] = "#" # WHY IS MY GAME COOKED
         
-    print(tabulate(board_vis, tablefmt="grid"))
+    # print(tabulate(board_vis, tablefmt="grid"))
 
     return a_star_search(board_vis, [0, 0], board.exit_pos)
     
@@ -452,77 +494,107 @@ def main():
     player = Player()
     game = Game()
     
-    while True: # while loop for game
-        while True:
-            board = Dungeon(level)
-            if possible_board(board):
-                print("board is solvable")
-                break
-            
-        player_turn = 1 # accounts for boots passive
-        game_turn = 1
-        player_dead = False
-        
-        print(f"Entering floor {level}")
-        player.row, player.col = 0, 0
-        
-        while True: # while loop for levels
-            board.print_board(player, game_turn)
-            # debug printing
-            for item in player.inventory:
-                print(str(item))
-            print(player_turn, game_turn)
+    while True: # while loop for the game itself
+        game.main_menu()
+
+        while True: # while loop for gameplay
+            while True:
+                board = Dungeon(level)
+                if possible_board(board):
+                    # print("board is solvable")
+                    break
                 
-            # activate boots if the player turn is the next player turn)
-            Boots.activate_boots(player_turn, player)
+            player_turn = 1 # accounts for boots passive
+            game_turn = 1
+            player_dead = False
+            
+            print(f"Entering floor {level}")
+            player.row, player.col = 0, 0
 
-            game.player_action(player, board)
-            
-            board.check_and_get_treasure(player)
-            
-            if board.check_win(player):
+            damage_blocked = False
+            rifle_dropped = False
+            sword_broke = False
+            while True: # while loop for levels
+                if damage_blocked:
+                    print("[Armor] passive: damage blocked!")
+                    damage_blocked = False
+                if rifle_dropped:
+                    print("[Rifle] out of bullets.")
+                    rifle_dropped = False
+                if sword_broke:
+                    print("[Sword] broke.")
+                    sword_broke = False
+
                 board.print_board(player, game_turn)
-                break
-            board
+                # debug printing
+                for item in player.inventory:
+                    print(str(item))
+                print(player_turn, game_turn)
+                    
+                # activate boots if the player turn is the next player turn)
+                Boots.activate_boots(player_turn, player)
 
-            # use boots if player turn is mult of 3 (player turn to be played on)
-            if Boots.use_boots(player_turn, player):
+                game.player_action(player, board)
+                
+                board.check_and_get_treasure(player)
+                
+                if board.check_win(player):
+                    board.print_board(player, game_turn)
+                    break
+                board
+
+                # use boots if player turn is mult of 3 (player turn to be played on)
+                if Boots.use_boots(player_turn, player):
+                    player_turn += 1
+                    os.system("clear")
+                    print("[Boots] passive: move again")
+                    continue
+                
+                if (game_turn % 2 == 0) and (board.blood_moon == False):
+                    for monster in board.monsters:
+                        monster.move(player, board)
+                elif board.blood_moon == True:
+                    for monster in board.monsters:
+                        monster.move(player, board)
+                
+                damage_blocked = board.check_monster_attack(player)
+                
+                if player.health <= 0:
+                    player_dead = True
+                    break
+                
+                # check if items are broken
+                i = len(player.inventory) - 1
+                while i >= 0:
+                    if isinstance(player.inventory[i], Rifle):
+                        if player.inventory[i].ammo <= 0:
+                            player.inventory.pop(i)
+                            rifle_dropped = True
+                            break
+                    if isinstance(player.inventory[i], Sword):
+                        if player.inventory[i].durability <= 0:
+                            player.inventory.pop(i)
+                            sword_broke = True
+                            break
+                    i -= 1
+                
                 player_turn += 1
-                continue
-            
-            if game_turn % 2 == 0:
-                for monster in board.monsters:
-                    monster.move(player, board)
-            
-            board.check_monster_attack(player)
-            
-            if player.health == 0:
-                player_dead = True
+                game_turn += 1
+                os.system("clear")
+                
+            if player_dead:
+                board.print_board(player, game_turn)
+                print(f"You died on floor {level}...")
+                print(f"Monsters slain: {player.monsters_killed}")
+                input("Press any button to continue\n")
+                os.system("clear")
                 break
             
-            i = len(player.inventory) - 1
-            while i >= 0:
-                if isinstance(player.inventory[i], Rifle):
-                    if player.inventory[i].ammo == 0:
-                        player.inventory.pop(i)
-                        print("Out of bullets!")
-                i -= 1
-            
-            player_turn += 1
-            game_turn += 1
-            os.system("clear")
-            
-        if player_dead:
-            board.print_board(player, game_turn)
-            print(f"You died on floor {level}...")
-            print(f"Monsters slain: {player.monsters_killed}")
-            break
-        
-        print(f"Floor {level} passed in {game_turn} moves!")
-        player.score += 1
-        level += 1
+            print(f"Floor {level} passed in {game_turn} moves!")
+            player.score += 1
+            level += 1
 
-        os.system("clear")
+            os.system("clear")
 
 if __name__ == "__main__":
     main()

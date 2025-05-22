@@ -1,5 +1,8 @@
 import heapq
 
+# to be honest this algorithm is pretty bs. it literally just tries to go
+# straight to the goal and if it doesnt work it just backtracks and tries again lol
+
 class Cell:
     def __init__(self):
         self.row = 0
@@ -55,10 +58,10 @@ def a_star_search(grid, start, end):
     heapq.heappush(open_list, (0.0, row, col))
     
     while len(open_list) > 0:
-        current_node = heapq.heappop(open_list)
+        current_cell = heapq.heappop(open_list)
         
-        row = current_node[1]
-        col = current_node[2]
+        row = current_cell[1]
+        col = current_cell[2]
         closed_list[row][col] = True
         
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -84,7 +87,7 @@ def a_star_search(grid, start, end):
                         cells[new_row][new_col].row = row
                         cells[new_row][new_col].col = col
                         
-                        print(f"cell accessed: {new_row, new_col}")
+                        # print(f"cell accessed: {new_row, new_col}")
     return False
     
 def main():
