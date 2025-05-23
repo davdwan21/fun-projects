@@ -4,12 +4,13 @@ import time
 import os
 from a_star import a_star_search
 from colorama import Fore
+import readchar
 
 # choose to either move or active item on a turn
 # sword: on turn, choose to use sword + slash in a certain direction.
 
 # WHY THE FRICK ARE ENEMIES IMMUNE TO RIFLES RANDOMLY
-class Game:        
+class Game:
     def player_action(self, player, board):
         print("(W) (A) (S) (D) to move", end="")
         if player.inventory:
@@ -20,14 +21,18 @@ class Game:
 
         try:
             while True:
-                move = input().lower()
+                move = readchar.readkey()
+
                 if move == "w" or move == "a" or move == "s" or move == "d":
                     player.move(move, board)
                     break
                 elif move == "1" or move == "2":
-                    item = player.inventory[int(move) - 1]
-                    player.use_item(item, board, player)
-                    break
+                    if player.inventory:
+                        item = player.inventory[int(move) - 1]
+                        player.use_item(item, board, player)
+                    else:
+                        print("Please input a proper move.")
+                    continue
                 elif move == "/":
                     player.backdoor(board)
                     break
@@ -340,7 +345,8 @@ class Sword(Item):
         p_row, p_col = player.row, player.col
         try:
             while True:
-                direction = input("(W) (A) (S) (D) direction to slash: ").lower()
+                print("(W) (A) (S) (D) direction to slash: ", end="")
+                direction = readchar.readkey()
                 if direction == "w":
                     attacked_square = [p_row - 1, p_col]
                     break
@@ -379,7 +385,8 @@ class Rifle(Item):
         p_row, p_col = player.row, player.col
         try:
             while True:
-                direction = input("(W) (A) (S) (D) direction to fire: ").lower()
+                print("(W) (A) (S) (D) direction to fire: ", end="")
+                direction = readchar.readkey()
                 if direction == "w":
                     attack_squares = [[p_row - i, p_col] for i in range(1, p_row)]
                     break
@@ -501,12 +508,12 @@ def possible_board(board):
     return a_star_search(board_vis, [0, 0], board.exit_pos)
     
 def main():
-    level = 1
-    player = Player()
     game = Game()
     
     while True: # while loop for the game itself
         game.main_menu()
+        player = Player()
+        level = 1
 
         while True: # while loop for gameplay
             while True:
@@ -536,6 +543,7 @@ def main():
                     print("[Sword] broke.")
                     sword_broke = False
 
+                print("###")
                 board.print_board(player, game_turn)
                 # debug printing
                 # for item in player.inventory:
@@ -545,6 +553,7 @@ def main():
                 # activate boots if the player turn is the next player turn)
                 Boots.activate_boots(player_turn, player)
 
+                print("&&&")
                 game.player_action(player, board)
                 
                 board.check_and_get_treasure(player)
@@ -597,7 +606,7 @@ def main():
                 board.print_board(player, game_turn)
                 print(f"You died on floor {level}...")
                 print(f"Monsters slain: {player.monsters_killed}")
-                input("Press any button to continue\n")
+                input("Press [ENTER] to continue\n")
                 os.system("clear")
                 break
             
