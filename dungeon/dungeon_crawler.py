@@ -11,14 +11,15 @@ import readchar
 
 # WHY THE FRICK ARE ENEMIES IMMUNE TO RIFLES RANDOMLY
 class Game:
-    def player_action(self, player, board):
-        print("(W) (A) (S) (D) to move", end="")
+    def action_instructions(self, player):
+        print("(W) (A) (S) (D) to move (what the frick)", end="")
         if player.inventory:
             for i in range(len(player.inventory)):
                 if isinstance(player.inventory[i], Sword) or isinstance(player.inventory[i], Rifle):
                     print(f" | ({i + 1}) for {player.inventory[i].name}", end="")
         print(": ", end="")
 
+    def player_action(self, player, board):
         try:
             while True:
                 move = readchar.readkey()
@@ -29,6 +30,7 @@ class Game:
                 elif move == "1" or move == "2":
                     if player.inventory:
                         item = player.inventory[int(move) - 1]
+                        print("why isnt this running")
                         player.use_item(item, board, player)
                     else:
                         print("Please input a proper move.")
@@ -43,11 +45,11 @@ class Game:
             print("Please play a move.")
 
     def main_menu(self):
-        print("---GAME---")
-        print(tabulate([["PLAY", "HOW TO PLAY", "EXIT"]]))
-
         while True:
             try:
+                print("--basic dungeon crawler--")
+                print(tabulate([["PLAY", "HOW TO PLAY", "EXIT"]]))
+                
                 user = input("Type to (P)lay, (H)ow to Play, or (E)xit.\n")
                 print(user.lower()[0])
                 if user.lower()[0] == "p":
@@ -279,16 +281,17 @@ class Player:
             print("Inventory full! Choose an item to drop: ")
             try:
                 while True:
-                    choice = int(input(f"(1) for {self.inventory[0]}, (2) for {self.inventory[1]}, (3) for {item} "))
-                    if choice == 1:
+                    print(f"(1) for {self.inventory[0]}, (2) for {self.inventory[1]}, (3) for {item} ")
+                    choice = readchar.readkey()
+                    if choice == "1":
                         self.inventory.pop(0)
                         self.inventory.append(item)
                         break
-                    elif choice == 2:
+                    elif choice == "2":
                         self.inventory.pop(1)
                         self.inventory.append(item)
                         break
-                    elif choice == 3:
+                    elif choice == "3":
                         break
                     else:
                         print("Please choose an item to discard.")
@@ -312,8 +315,10 @@ class Player:
     
     def use_item(self, item, board, player):
         if isinstance(item, Sword):
+            print("(W) (A) (S) (D) direction to slash: ", end="")
             item.slash(board, player)
         elif isinstance(item, Rifle):
+            print("(W) (A) (S) (D) direction to shoot: ", end="")
             item.shoot(board, player)
             
     # backdoor for debugging - get to later floors
@@ -345,7 +350,6 @@ class Sword(Item):
         p_row, p_col = player.row, player.col
         try:
             while True:
-                print("(W) (A) (S) (D) direction to slash: ", end="")
                 direction = readchar.readkey()
                 if direction == "w":
                     attacked_square = [p_row - 1, p_col]
@@ -533,6 +537,7 @@ def main():
             rifle_dropped = False
             sword_broke = False
             while True: # while loop for levels
+                # print("#####")
                 if damage_blocked:
                     print("[Armor] passive: damage blocked!")
                     damage_blocked = False
@@ -543,7 +548,6 @@ def main():
                     print("[Sword] broke.")
                     sword_broke = False
 
-                print("###")
                 board.print_board(player, game_turn)
                 # debug printing
                 # for item in player.inventory:
@@ -553,7 +557,9 @@ def main():
                 # activate boots if the player turn is the next player turn)
                 Boots.activate_boots(player_turn, player)
 
-                print("&&&")
+                # print("wrap")
+                game.action_instructions(player)
+                print()
                 game.player_action(player, board)
                 
                 board.check_and_get_treasure(player)
@@ -601,6 +607,7 @@ def main():
                 player_turn += 1
                 game_turn += 1
                 os.system("clear")
+                # print("#")
                 
             if player_dead:
                 board.print_board(player, game_turn)
