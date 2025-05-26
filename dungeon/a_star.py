@@ -40,7 +40,6 @@ def a_star_search(grid, start, end):
                     add the node to the open queue
                     
     if the end is never found, return false
-    
     """
     closed_list = [[False for _ in range(len(grid[0]))] for _ in range(len(grid))]
     cells = [[Cell() for _ in range(len(grid[0]))] for _ in range(len(grid))]
@@ -86,8 +85,6 @@ def a_star_search(grid, start, end):
                         cells[new_row][new_col].h = new_h
                         cells[new_row][new_col].row = row
                         cells[new_row][new_col].col = col
-                        
-                        # print(f"cell accessed: {new_row, new_col}")
     return False
     
 def main():
@@ -100,7 +97,7 @@ def main():
     
     return
     """
-    # test grid for now
+    # grid for testing
     grid = [["-", "-", "#"],
             ["#", "-", "-"],
             ["-", "#", "-"]]

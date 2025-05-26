@@ -1,15 +1,12 @@
 from tabulate import tabulate
 import random
-import time
 import os
 from a_star import a_star_search
 from colorama import Fore
 import readchar
 
-# choose to either move or active item on a turn
-# sword: on turn, choose to use sword + slash in a certain direction.
+# original file that i coded in with everything in one file (kinda cooked) (almost 600 lines of code) (broski)
 
-# WHY THE FRICK ARE ENEMIES IMMUNE TO RIFLES RANDOMLY
 class Game:
     def action_instructions(self, player):
         print("(W) (A) (S) (D) to move (what the frick)", end="")
@@ -30,7 +27,6 @@ class Game:
                 elif move == "1" or move == "2":
                     if player.inventory:
                         item = player.inventory[int(move) - 1]
-                        print("why isnt this running")
                         player.use_item(item, board, player)
                     else:
                         print("Please input a proper move.")
@@ -49,7 +45,7 @@ class Game:
             try:
                 print("--basic dungeon crawler--")
                 print(tabulate([["PLAY", "HOW TO PLAY", "EXIT"]]))
-                
+
                 user = input("Type to (P)lay, (H)ow to Play, or (E)xit.\n")
                 print(user.lower()[0])
                 if user.lower()[0] == "p":
@@ -104,7 +100,6 @@ class Dungeon:
         for wall in wall_origins:
             self.walls.append(wall)
             occupied_spaces.append(wall)
-        # print(self.walls)
             
         # prevent the exit or player from being replaced by a wall
         for i in range(len(self.walls) - 1):
@@ -120,7 +115,7 @@ class Dungeon:
         # treasure generation
         self.treasures = []
         treasure_choices = [1, 2, 3, 4]
-        chosen_treasures = random.sample(treasure_choices, 3) # hard coded
+        chosen_treasures = random.sample(treasure_choices, 3)
         for treasure_type in chosen_treasures:
             while True:
                 row = random.randint(0, self.board_rows - 1)
@@ -153,11 +148,6 @@ class Dungeon:
             self.monsters.append(monster)
             occupied_spaces.append([row, col])
             num_monsters += 1
-        
-        # print(occupied_spaces)
-        # print(self.walls)
-        # print(self.treasures)
-        # print(self.monsters)
         
     def check_win(self, player):
         if [player.col, player.row] == self.exit_pos:
@@ -221,11 +211,8 @@ class Dungeon:
         damage_blocked = False
 
         p_row, p_col = player.row, player.col
-        # print("##", self.monsters, p_row, p_col)
         for i in range(len(self.monsters) - 1, -1, -1):
             if self.monsters[i].col == p_row and self.monsters[i].row == p_col:
-                # print("&", "is this running?")
-
                 armor_slot = player.check_armor()
                 if armor_slot >= 0:
                     player.inventory.pop(armor_slot)
@@ -325,12 +312,6 @@ class Player:
     def backdoor(self, board):
         self.row = board.board_rows - 1
         self.col = board.board_columns - 1
-
-    # def view_inventory(self):
-    #    if self.inventory:
-    #        print(tabulate(self.inventory, tablefmt="grid"))
-    #    else:
-    #        print("Inventory empty.")
         
 class Item:
     def __init__(self, name, description):
@@ -447,11 +428,10 @@ class Monster:
         self.row = row
         self.col = col
 
-    # monster movement is switched row, col --> col, row
+    # monster movement is accidentally switched row, col --> col, row
     def move(self, player, board):
         p_row, p_col = player.row, player.col
 
-        # why the frick?
         monster_col, monster_row = self.row, self.col
         
         wall_north = False
@@ -469,7 +449,6 @@ class Monster:
             if monster_row == wall[1] + 1 and monster_col == wall[0]:
                 wall_north = True
         
-        # print("###", wall_north, wall_east, wall_south, wall_west)
         # x and y distances from player
         # try to minimize the larger one if a wall isn't in the way
         # otherwise minize the other one if a wall isnt in the way
@@ -477,12 +456,9 @@ class Monster:
         
         row_distance = monster_row - p_row # + means monster is below player
         col_distance = monster_col - p_col # + means monster is right of player
-        # print("###", row_distance, col_distance, monster_row, monster_col, p_row, p_col)
         if abs(row_distance) >= abs(col_distance):
-            # print("###", "moving closer on row")
             if monster_row > p_row and wall_north == False and [self.row - 1, self.col] not in board.monsters:
                 self.col -= 1
-                # print("this is running")
             elif monster_row < p_row and wall_south == False and [self.row + 1, self.col] not in board.monsters:
                 self.col += 1
             elif col_distance > 0 and wall_west == False and [self.row, self.col - 1] not in board.monsters:
@@ -490,7 +466,6 @@ class Monster:
             elif col_distance < 0 and wall_east == False and [self.row, self.col + 1] not in board.monsters:
                 self.row += 1
         elif abs(row_distance) < abs(col_distance):
-            # print("###", "moving closer on col")
             if monster_col > p_col and wall_west == False and [self.row, self.col - 1] not in board.monsters:
                 self.row -= 1
             elif monster_col < p_col and wall_east == False and [self.row, self.col + 1] not in board.monsters:
@@ -505,9 +480,7 @@ def possible_board(board):
     board_vis = [["-" for _ in range(board.board_rows)] for _ in range(board.board_columns)]
     
     for wall in board.walls:
-        board_vis[wall[1]][wall[0]] = "#" # WHY IS MY GAME COOKED
-        
-    # print(tabulate(board_vis, tablefmt="grid"))
+        board_vis[wall[1]][wall[0]] = "#" # apparently walls are also switched row, col --> col, row
 
     return a_star_search(board_vis, [0, 0], board.exit_pos)
     
@@ -537,7 +510,6 @@ def main():
             rifle_dropped = False
             sword_broke = False
             while True: # while loop for levels
-                # print("#####")
                 if damage_blocked:
                     print("[Armor] passive: damage blocked!")
                     damage_blocked = False
@@ -549,15 +521,10 @@ def main():
                     sword_broke = False
 
                 board.print_board(player, game_turn)
-                # debug printing
-                # for item in player.inventory:
-                #    print(str(item))
-                # print(player_turn, game_turn)
                     
                 # activate boots if the player turn is the next player turn)
                 Boots.activate_boots(player_turn, player)
 
-                # print("wrap")
                 game.action_instructions(player)
                 print()
                 game.player_action(player, board)
@@ -589,7 +556,7 @@ def main():
                     player_dead = True
                     break
                 
-                # check if items are broken
+                # check if items are out of out of use
                 i = len(player.inventory) - 1
                 while i >= 0:
                     if isinstance(player.inventory[i], Rifle):
@@ -607,7 +574,6 @@ def main():
                 player_turn += 1
                 game_turn += 1
                 os.system("clear")
-                # print("#")
                 
             if player_dead:
                 board.print_board(player, game_turn)
