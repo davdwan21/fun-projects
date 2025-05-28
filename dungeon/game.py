@@ -20,13 +20,19 @@ class Game:
                 if move == "w" or move == "a" or move == "s" or move == "d":
                     player.move(move, board)
                     break
-                elif move == "1" or move == "2":
+                elif move == "1":
                     if player.inventory:
                         item = player.inventory[int(move) - 1]
                         player.use_item(item, board, player)
                     else:
                         print("Please input a proper move.")
                     continue
+                elif move == "2":
+                    if len(player.inventory) == 2:
+                        item = player.inventory[int(move) - 1]
+                        player.use_item(item, board, player)
+                    else:
+                        print("Please input a proper move")
                 elif move == "/":
                     player.backdoor(board)
                     break

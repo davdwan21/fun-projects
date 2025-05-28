@@ -78,12 +78,22 @@ class Rifle(Item):
             print(f"You shoot in the direction ({direction})")
             for square in attack_squares:
                 i = len(board.monsters) - 1
+                blocking_wall = False
                 while i >= 0:
                     if [board.monsters[i].col, board.monsters[i].row] == square:
                         print("Monster shot!")
                         player.monsters_killed += 1
                         board.monsters.pop(i)
+                    for wall in board.walls:
+                        if [wall[1], wall[0]] == square:
+                            print("Shot blocked by a wall.")
+                            blocking_wall = True
+                            break
+                    if blocking_wall:
+                        break
                     i -= 1
+                if blocking_wall:
+                    break
         except ValueError:
             print("Please input a direction.")
 
